@@ -8,13 +8,13 @@ RUN apt-get update && apt-get install -y \
 # Create app directory
 WORKDIR /app
 
-# Copy proxy application files
-COPY build/libs/Piped-Backend-all.jar ./proxy.jar
+# Copy proxy service files
+COPY proxy-service.sh /
 COPY proxy-healthcheck.sh /
 COPY VERSION .
 
-# Make health check script executable
-RUN chmod +x /proxy-healthcheck.sh
+# Make scripts executable
+RUN chmod +x /proxy-service.sh /proxy-healthcheck.sh
 
 # Expose proxy port
 EXPOSE 1080
@@ -23,4 +23,4 @@ EXPOSE 1080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 CMD /proxy-healthcheck.sh
 
 # Run proxy service
-ENTRYPOINT ["java", "-jar", "proxy.jar"]
+ENTRYPOINT ["/proxy-service.sh"]
