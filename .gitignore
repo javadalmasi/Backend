@@ -1,0 +1,31 @@
+# Compiled class file
+*.class
+bin/
+
+.*
+
+!.gitignore
+!.dockerignore
+
+!.github/
+
+# Log file
+*.log
+
+### Gradle ###
+/build/
+
+# Database Data
+/data/
+
+# TxT File
+*.txt
+
+# Jar files
+*.jar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Version File
+VERSION
