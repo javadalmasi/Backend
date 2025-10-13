@@ -1,30 +1,57 @@
 package me.kavin.piped.proxy;
 
-import me.kavin.piped.consts.Constants;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
-/**
- * Main class for running only the proxy service
- */
 public class ProxyMain {
     
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static ProxyService proxyService;
+    
     public static void main(String[] args) {
-        System.out.println("Starting Piped Proxy Service...");
+        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Starting Piped Proxy Service...");
         
-        // Create and start proxy manager
-        ProxyManager proxyManager = new ProxyManager();
-        proxyManager.start(Constants.DYNAMIC_PROXY_PORT);
+        // Parse command line arguments
+        int port = 1080;
+        if (args.length > 0) {
+            try {
+                port = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                System.err.println("[" + LocalDateTime.now().format(formatter) + "] Invalid port number: " + args[0]);
+                System.exit(1);
+            }
+        }
+        
+        // Create and start proxy service
+        proxyService = new ProxyService();
+        proxyService.setProxyPort(port);
+        proxyService.start();
         
         // Add shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("Shutting down Piped Proxy Service...");
-            proxyManager.stop();
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Shutting down Piped Proxy Service...");
+            if (proxyService != null) {
+                proxyService.stop();
+            }
         }));
         
         // Keep the service running
         try {
-            Thread.currentThread().join();
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Piped Proxy Service is running on port " + port + ". Press Ctrl+C to stop.");
+            
+            // Display current IP periodically
+            while (true) {
+                Thread.sleep(30000); // 30 seconds
+                
+                if (proxyService != null && proxyService.isRunning()) {
+                    String currentIP = proxyService.getCurrentIPAddress();
+                    int activeCount = proxyService.getActiveProxyCount();
+                    System.out.println("[" + LocalDateTime.now().format(formatter) + "] Current IP: " + currentIP + 
+                                     " | Active proxies: " + activeCount);
+                }
+            }
         } catch (InterruptedException e) {
-            System.err.println("Proxy service interrupted: " + e.getMessage());
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy service interrupted");
             Thread.currentThread().interrupt();
         }
     }

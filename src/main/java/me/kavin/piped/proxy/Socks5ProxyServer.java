@@ -2,22 +2,20 @@ package me.kavin.piped.proxy;
 
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class Socks5ProxyServer {
     
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final int DEFAULT_SOCKS5_PORT = 1080;
-    private static final AtomicInteger proxyIndex = new AtomicInteger(0);
-    
     private ServerSocket serverSocket;
     private volatile boolean running = false;
-    private List<String> activeProxies = new CopyOnWriteArrayList<>();
-    private final Object proxyLock = new Object();
+    private final ProxyService proxyService;
+    
+    public Socks5ProxyServer(ProxyService proxyService) {
+        this.proxyService = proxyService;
+    }
     
     /**
      * Starts the SOCKS5 proxy server
@@ -38,7 +36,7 @@ public class Socks5ProxyServer {
                 new Thread(() -> handleClient(clientSocket)).start();
             } catch (IOException e) {
                 if (running) {
-                    System.err.println("Error accepting client connection: " + e.getMessage());
+                    System.err.println("[" + LocalDateTime.now().format(formatter) + "] Error accepting client connection: " + e.getMessage());
                 }
                 break;
             }
@@ -54,22 +52,10 @@ public class Socks5ProxyServer {
             try {
                 serverSocket.close();
             } catch (IOException e) {
-                System.err.println("Error closing server socket: " + e.getMessage());
+                System.err.println("[" + LocalDateTime.now().format(formatter) + "] Error closing server socket: " + e.getMessage());
             }
         }
         System.out.println("[" + LocalDateTime.now().format(formatter) + "] SOCKS5 proxy server stopped");
-    }
-    
-    /**
-     * Updates the list of active proxies
-     * @param proxies List of working proxies
-     */
-    public void updateActiveProxies(List<String> proxies) {
-        synchronized (proxyLock) {
-            this.activeProxies.clear();
-            this.activeProxies.addAll(proxies);
-            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Updated active proxies. Count: " + activeProxies.size());
-        }
     }
     
     /**
@@ -94,19 +80,19 @@ public class Socks5ProxyServer {
                 return;
             }
             
-            // Select a proxy using round-robin
-            String selectedProxy = selectProxyRoundRobin();
-            if (selectedProxy == null) {
-                System.err.println("No active proxies available");
+            // Get current proxy
+            ProxyInfo currentProxy = proxyService.getCurrentProxy();
+            if (currentProxy == null) {
+                System.err.println("[" + LocalDateTime.now().format(formatter) + "] No active proxies available");
                 clientSocket.close();
                 return;
             }
             
-            // Forward the connection through the selected proxy
-            forwardConnection(clientSocket, target, selectedProxy);
+            // Forward the connection through the current proxy
+            forwardConnection(clientSocket, target, currentProxy);
             
         } catch (Exception e) {
-            System.err.println("Error handling client: " + e.getMessage());
+            System.err.println("[" + LocalDateTime.now().format(formatter) + "] Error handling client: " + e.getMessage());
         } finally {
             try {
                 clientSocket.close();
@@ -130,7 +116,7 @@ public class Socks5ProxyServer {
         
         // Check version
         if (version != 5) {
-            System.err.println("Unsupported SOCKS version: " + version);
+            System.err.println("[" + LocalDateTime.now().format(formatter) + "] Unsupported SOCKS version: " + version);
             return false;
         }
         
@@ -161,7 +147,7 @@ public class Socks5ProxyServer {
         
         // Check version
         if (version != 5) {
-            System.err.println("Invalid SOCKS version in request: " + version);
+            System.err.println("[" + LocalDateTime.now().format(formatter) + "] Invalid SOCKS version in request: " + version);
             return null;
         }
         
@@ -181,7 +167,7 @@ public class Socks5ProxyServer {
             in.readFully(ipv6Bytes);
             address = InetAddress.getByAddress(ipv6Bytes).getHostAddress();
         } else {
-            System.err.println("Unsupported address type: " + addrType);
+            System.err.println("[" + LocalDateTime.now().format(formatter) + "] Unsupported address type: " + addrType);
             return null;
         }
         
@@ -196,32 +182,17 @@ public class Socks5ProxyServer {
     }
     
     /**
-     * Selects a proxy using round-robin algorithm
-     * @return Selected proxy or null if none available
-     */
-    private String selectProxyRoundRobin() {
-        synchronized (proxyLock) {
-            if (activeProxies.isEmpty()) {
-                return null;
-            }
-            
-            int index = proxyIndex.getAndIncrement() % activeProxies.size();
-            if (index < 0) {
-                index = -index;
-                proxyIndex.set(index);
-            }
-            
-            return activeProxies.get(index);
-        }
-    }
-    
-    /**
      * Forwards the connection through the selected proxy
      * @param clientSocket Client socket
      * @param target Target address
      * @param proxy Proxy to use
      */
-    private void forwardConnection(Socket clientSocket, SocksTarget target, String proxy) {
+    private void forwardConnection(Socket clientSocket, SocksTarget target, ProxyInfo proxy) {
+        // Log connection info
+        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Forwarding connection to " + 
+                          target.getAddress() + ":" + target.getPort() + 
+                          " through proxy " + proxy.getDisplayInfo());
+        
         // In a real implementation, you would:
         // 1. Parse the proxy URL to extract connection details
         // 2. Connect to the proxy server
@@ -229,11 +200,15 @@ public class Socks5ProxyServer {
         // 4. Relay data between client and proxy
         
         // For this implementation, we'll just acknowledge the connection
-        System.out.println("Forwarding connection to " + target.getAddress() + ":" + target.getPort() + 
-                          " through proxy " + proxy);
-        
-        // In a real implementation, you would establish a connection to the proxy
-        // and relay data between the client and the proxy
+        try {
+            // Simple relay implementation would go here
+            // This is a placeholder for actual proxy forwarding logic
+            PrintWriter writer = new PrintWriter(clientSocket.getOutputStream(), true);
+            writer.println("HTTP/1.1 200 Connection Established\r\n\r\n");
+            writer.flush();
+        } catch (IOException e) {
+            System.err.println("[" + LocalDateTime.now().format(formatter) + "] Error forwarding connection: " + e.getMessage());
+        }
     }
     
     /**
