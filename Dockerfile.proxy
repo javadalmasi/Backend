@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy proxy application files
-COPY build/libs/Piped-Backend-proxy.jar ./proxy.jar
+COPY build/libs/Piped-Backend-all.jar ./proxy.jar
 COPY proxy-healthcheck.sh /
 COPY VERSION .
 

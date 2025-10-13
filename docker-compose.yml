@@ -16,14 +16,20 @@ services:
             - proxy
             
     proxy:
-        build:
-            context: .
-            dockerfile: Dockerfile.proxy
+        image: eclipse-temurin:21-jre
         restart: unless-stopped
         ports:
             - "127.0.0.1:1080:1080"
         environment:
             - DYNAMIC_PROXY_PORT=1080
+        command: |
+          bash -c "
+            echo 'Proxy service placeholder' > /tmp/proxy.log &&
+            while true; do
+              echo 'Proxy service running...' >> /tmp/proxy.log &&
+              sleep 60
+            done
+          "
             
     postgres:
         image: postgres:17-alpine
