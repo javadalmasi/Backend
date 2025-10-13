@@ -1,6 +1,6 @@
 services:
     piped:
-        build: .
+        image: 1337kavin/piped:latest
         restart: unless-stopped
         ports:
             - "8080:8080"

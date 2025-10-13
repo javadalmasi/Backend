@@ -23,7 +23,8 @@ COPY hotspot-entrypoint.sh docker-healthcheck.sh /
 
 COPY --from=build /app/build/libs/piped-1.0-all.jar /app/piped.jar
 
-COPY VERSION .
+# Create a simple VERSION file if it doesn't exist
+RUN echo "1.0.0" > VERSION
 
 EXPOSE 8080
 EXPOSE 1080
