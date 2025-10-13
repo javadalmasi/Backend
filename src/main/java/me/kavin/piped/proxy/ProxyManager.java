@@ -1,5 +1,7 @@
 package me.kavin.piped.proxy;
 
+import me.kavin.piped.consts.Constants;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -11,44 +13,81 @@ import java.time.format.DateTimeFormatter;
 public class ProxyManager {
     
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static final int DEFAULT_SOCKS5_PORT = 1080;
-    
-    private final ProxyFetcher fetcher;
-    private final ProxyHealthChecker healthChecker;
-    private final Socks5ProxyServer socks5Server;
-    private final ScheduledExecutorService scheduler;
-    
-    public ProxyManager() {
-        this.fetcher = new ProxyFetcher();
-        this.healthChecker = new ProxyHealthChecker();
-        this.socks5Server = new Socks5ProxyServer();
-        this.scheduler = Executors.newScheduledThreadPool(2);
-    }
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+    private Socks5ProxyServer socks5Server;
+    private volatile boolean running = false;
     
     /**
      * Starts the proxy manager
-     * @param socks5Port Port for the SOCKS5 proxy server
+     * @param port Port for the SOCKS5 proxy server
      */
-    public void start(int socks5Port) {
-        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Starting proxy manager...");
+    public void start(int port) {
+        if (running) {
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy manager is already running");
+            return;
+        }
         
-        // Start the SOCKS5 proxy server
+        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Starting proxy manager on port " + port + "...");
+        
         try {
+            // Initialize SOCKS5 server
+            socks5Server = new Socks5ProxyServer();
+            
+            // Start SOCKS5 server in a separate thread
             new Thread(() -> {
                 try {
-                    socks5Server.start(socks5Port);
+                    socks5Server.start(port);
                 } catch (IOException e) {
                     System.err.println("Failed to start SOCKS5 proxy server: " + e.getMessage());
                     e.printStackTrace();
                 }
             }).start();
+            
+            // Wait a moment for server to start
+            Thread.sleep(1000);
+            
+            // Start the proxy update cycle
+            startProxyUpdateCycle();
+            
+            running = true;
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy manager started successfully");
+            
         } catch (Exception e) {
-            System.err.println("Error starting SOCKS5 proxy server: " + e.getMessage());
+            System.err.println("Error starting proxy manager: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Stops the proxy manager
+     */
+    public void stop() {
+        if (!running) {
+            System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy manager is not running");
+            return;
+        }
         
-        // Start the proxy update cycle
-        startProxyUpdateCycle();
+        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Stopping proxy manager...");
+        
+        // Stop SOCKS5 server
+        if (socks5Server != null) {
+            socks5Server.stop();
+        }
+        
+        // Shutdown scheduler
+        scheduler.shutdown();
+        
+        try {
+            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                scheduler.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            scheduler.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+        
+        running = false;
+        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy manager stopped");
     }
     
     /**
@@ -65,10 +104,12 @@ public class ProxyManager {
                 List<String> allProxies = ProxyFetcher.fetchProxies();
                 
                 // Check proxy health
-                List<String> workingProxies = healthChecker.checkProxyHealth(allProxies);
+                List<String> workingProxies = ProxyHealthChecker.checkProxyHealth(allProxies);
                 
                 // Update SOCKS5 server with working proxies
-                socks5Server.updateActiveProxies(workingProxies);
+                if (socks5Server != null) {
+                    socks5Server.updateActiveProxies(workingProxies);
+                }
                 
                 System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy update completed. Active proxies: " + workingProxies.size());
             } catch (Exception e) {
@@ -85,26 +126,10 @@ public class ProxyManager {
     }
     
     /**
-     * Stops the proxy manager
+     * Checks if the proxy manager is running
+     * @return true if running, false otherwise
      */
-    public void stop() {
-        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Stopping proxy manager...");
-        
-        // Stop the SOCKS5 server
-        socks5Server.stop();
-        
-        // Shutdown scheduler
-        scheduler.shutdown();
-        
-        try {
-            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-        
-        System.out.println("[" + LocalDateTime.now().format(formatter) + "] Proxy manager stopped");
+    public boolean isRunning() {
+        return running;
     }
 }

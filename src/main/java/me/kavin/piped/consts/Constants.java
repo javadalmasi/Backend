@@ -106,9 +106,9 @@ public class Constants {
 
     public static final String VERSION;
 
-    // Dynamic proxy configuration (enabled by default)
-    public static final boolean ENABLE_DYNAMIC_PROXY = true;
-    public static final int DYNAMIC_PROXY_PORT;
+    // Proxy service configuration
+    public static final String PROXY_HOST;
+    public static final int PROXY_PORT;
 
     public static final ObjectMapper mapper = JsonMapper.builder()
             .addMixIn(Page.class, PageMixin.class)
@@ -178,8 +178,9 @@ public class Constants {
             GEO_RESTRICTION_CHECKER_URL = getProperty(prop, "GEO_RESTRICTION_CHECKER_URL");
             BG_HELPER_URL = getProperty(prop, "BG_HELPER_URL");
             
-            // Dynamic proxy configuration (enabled by default, port configurable)
-            DYNAMIC_PROXY_PORT = Integer.parseInt(getProperty(prop, "DYNAMIC_PROXY_PORT", "1080"));
+            // Proxy service configuration
+            PROXY_HOST = getProperty(prop, "PROXY_HOST", "localhost");
+            PROXY_PORT = Integer.parseInt(getProperty(prop, "PROXY_PORT", "1080"));
 
             prop.forEach((_key, _value) -> {
                 String key = String.valueOf(_key), value = String.valueOf(_value);

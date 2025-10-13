@@ -10,7 +10,7 @@ An advanced open-source privacy friendly alternative to YouTube, crafted with th
 
 This version includes enhanced proxy capabilities that automatically fetch, rotate, and load balance SOCKS5 proxies from subscription URLs.
 
-The proxy functionality is **enabled by default** and runs on port 1080 alongside the main application.
+The proxy functionality is provided as a separate service that runs alongside the main application, similar to how PostgreSQL is set up.
 
 See [README-PROXY.md](README-PROXY.md) for details on how the dynamic proxy functionality works.
 
@@ -23,6 +23,12 @@ docker-compose up -d
 The application will be available at:
 - Main API: http://localhost:8080
 - SOCKS5 Proxy: localhost:1080 (for applications to connect through)
+
+## Services Included
+
+1. **Main Application** - The core Piped-Backend service
+2. **Proxy Service** - Dynamic proxy rotation and SOCKS5 server
+3. **PostgreSQL** - Database for storing user data and subscriptions
 
 ## Community Projects
 

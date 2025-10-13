@@ -60,6 +60,25 @@ jar {
     }
 }
 
+// Create a separate proxy JAR
+task proxyJar(type: Jar) {
+    archiveClassifier = 'proxy'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    manifest {
+        attributes(
+            'Main-Class': 'me.kavin.piped.proxy.ProxyMain'
+        )
+    }
+    
+    from sourceSets.main.output
+    
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21

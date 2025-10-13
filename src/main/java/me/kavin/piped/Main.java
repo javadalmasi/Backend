@@ -5,7 +5,6 @@ import io.sentry.Sentry;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import me.kavin.piped.consts.Constants;
-import me.kavin.piped.proxy.ProxyManager;
 import me.kavin.piped.server.ServerLauncher;
 import me.kavin.piped.utils.*;
 import me.kavin.piped.utils.matrix.SyncRunner;
@@ -38,9 +37,6 @@ import java.util.stream.Collectors;
 import static me.kavin.piped.consts.Constants.*;
 
 public class Main {
-
-    // Proxy manager instance
-    private static ProxyManager proxyManager;
 
     public static void main(String[] args) throws Exception {
 
@@ -95,9 +91,6 @@ public class Main {
                 MATRIX_SERVER,
                 MatrixHelper.MATRIX_TOKEN)
         ));
-
-        // Start the proxy manager by default
-        startProxyManager();
 
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override
@@ -264,21 +257,5 @@ public class Main {
             }
         }, 0, TimeUnit.MINUTES.toMillis(60));
 
-    }
-
-    /**
-     * Starts the proxy manager for dynamic proxy rotation
-     */
-    private static void startProxyManager() {
-        System.out.println("Starting dynamic proxy manager...");
-        proxyManager = new ProxyManager();
-        proxyManager.start(Constants.DYNAMIC_PROXY_PORT);
-
-        // Add shutdown hook to properly close the proxy manager
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (proxyManager != null) {
-                proxyManager.stop();
-            }
-        }));
     }
 }
