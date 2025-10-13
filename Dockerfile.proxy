@@ -8,10 +8,10 @@ RUN apt-get update && apt-get install -y \
 # Create app directory
 WORKDIR /app
 
-# Copy proxy service files
+# Copy all necessary files
 COPY proxy-service.sh /
 COPY proxy-healthcheck.sh /
-COPY VERSION .
+COPY VERSION /
 
 # Make scripts executable
 RUN chmod +x /proxy-service.sh /proxy-healthcheck.sh
