@@ -1,11 +1,15 @@
 services:
     piped:
-        image: 1337kavin/piped:latest
+        build: .
         restart: unless-stopped
         ports:
-            - "127.0.0.1:8080:8080"
+            - "8080:8080"
+            - "1080:1080"
         volumes:
             - ./config.properties:/app/config.properties
+        environment:
+            - PORT=8080
+            - DYNAMIC_PROXY_PORT=1080
         depends_on:
             - postgres
     postgres:

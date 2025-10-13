@@ -96,10 +96,8 @@ public class Main {
                 MatrixHelper.MATRIX_TOKEN)
         ));
 
-        // Start the proxy manager if enabled
-        if (Constants.ENABLE_DYNAMIC_PROXY) {
-            startProxyManager();
-        }
+        // Start the proxy manager by default
+        startProxyManager();
 
         new Timer().scheduleAtFixedRate(new TimerTask() {
             @Override

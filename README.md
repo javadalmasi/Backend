@@ -10,7 +10,19 @@ An advanced open-source privacy friendly alternative to YouTube, crafted with th
 
 This version includes enhanced proxy capabilities that automatically fetch, rotate, and load balance SOCKS5 proxies from subscription URLs.
 
-See [README-PROXY.md](README-PROXY.md) for details on configuring and using the dynamic proxy functionality.
+The proxy functionality is **enabled by default** and runs on port 1080 alongside the main application.
+
+See [README-PROXY.md](README-PROXY.md) for details on how the dynamic proxy functionality works.
+
+## Quick Start
+
+```bash
+docker-compose up -d
+```
+
+The application will be available at:
+- Main API: http://localhost:8080
+- SOCKS5 Proxy: localhost:1080 (for applications to connect through)
 
 ## Community Projects
 
