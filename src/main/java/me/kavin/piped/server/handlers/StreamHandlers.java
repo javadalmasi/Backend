@@ -51,7 +51,16 @@ public class StreamHandlers {
             Sentry.setExtra("videoId", videoId);
             ITransaction transaction = Sentry.startTransaction("StreamInfo fetch", "fetch");
             try {
-                return StreamInfo.getInfo("https://www.youtube.com/watch?v=" + videoId);
+                // Temporarily set the custom downloader for YouTube service to use proxy
+                var originalDownloader = NewPipe.getDownloader();
+                NewPipe.setDownloader(new StreamProxyDownloader());
+                
+                try {
+                    return StreamInfo.getInfo("https://www.youtube.com/watch?v=" + videoId);
+                } finally {
+                    // Always restore the original downloader
+                    NewPipe.setDownloader(originalDownloader);
+                }
             } catch (Exception e) {
                 if (e instanceof GeographicRestrictionException) {
                     return null;
@@ -313,25 +322,47 @@ public class StreamHandlers {
 
     public static byte[] resolveClipId(String clipId) throws Exception {
 
-        final byte[] body = JsonWriter.string(prepareDesktopJsonBuilder(
-                        getPreferredLocalization(), getPreferredContentCountry())
-                        .value("url", "https://www.youtube.com/clip/" + clipId)
-                        .done())
-                .getBytes(UTF_8);
+        // Temporarily set the custom downloader for YouTube service to use proxy
+        var originalDownloader = NewPipe.getDownloader();
+        NewPipe.setDownloader(new StreamProxyDownloader());
+        
+        byte[] result;
+        try {
+            final byte[] body = JsonWriter.string(prepareDesktopJsonBuilder(
+                            getPreferredLocalization(), getPreferredContentCountry())
+                            .value("url", "https://www.youtube.com/clip/" + clipId)
+                            .done())
+                    .getBytes(UTF_8);
 
-        final JsonObject jsonResponse = getJsonPostResponse("navigation/resolve_url",
-                body, getPreferredLocalization());
+            final JsonObject jsonResponse = getJsonPostResponse("navigation/resolve_url",
+                    body, getPreferredLocalization());
 
-        final String videoId = JsonUtils.getString(jsonResponse, "endpoint.watchEndpoint.videoId");
+            final String videoId = JsonUtils.getString(jsonResponse, "endpoint.watchEndpoint.videoId");
 
-        return mapper.writeValueAsBytes(new VideoResolvedResponse(videoId));
+            result = mapper.writeValueAsBytes(new VideoResolvedResponse(videoId));
+        } finally {
+            // Always restore the original downloader
+            NewPipe.setDownloader(originalDownloader);
+        }
+
+        return result;
     }
 
     public static byte[] commentsResponse(String videoId) throws Exception {
 
         Sentry.setExtra("videoId", videoId);
 
-        CommentsInfo info = CommentsInfo.getInfo("https://www.youtube.com/watch?v=" + videoId);
+        // Temporarily set the custom downloader for YouTube service to use proxy
+        var originalDownloader = NewPipe.getDownloader();
+        NewPipe.setDownloader(new StreamProxyDownloader());
+        
+        CommentsInfo info;
+        try {
+            info = CommentsInfo.getInfo("https://www.youtube.com/watch?v=" + videoId);
+        } finally {
+            // Always restore the original downloader
+            NewPipe.setDownloader(originalDownloader);
+        }
 
         List<Comment> comments = new ObjectArrayList<>();
 
@@ -369,7 +400,17 @@ public class StreamHandlers {
 
         Page prevpage = mapper.readValue(prevpageStr, Page.class);
 
-        ListExtractor.InfoItemsPage<CommentsInfoItem> info = CommentsInfo.getMoreItems(YOUTUBE_SERVICE, "https://www.youtube.com/watch?v=" + videoId, prevpage);
+        // Temporarily set the custom downloader for YouTube service to use proxy
+        var originalDownloader = NewPipe.getDownloader();
+        NewPipe.setDownloader(new StreamProxyDownloader());
+        
+        ListExtractor.InfoItemsPage<CommentsInfoItem> info;
+        try {
+            info = CommentsInfo.getMoreItems(YOUTUBE_SERVICE, "https://www.youtube.com/watch?v=" + videoId, prevpage);
+        } finally {
+            // Always restore the original downloader
+            NewPipe.setDownloader(originalDownloader);
+        }
 
         List<Comment> comments = new ObjectArrayList<>();
 

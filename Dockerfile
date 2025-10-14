@@ -23,11 +23,9 @@ COPY hotspot-entrypoint.sh docker-healthcheck.sh /
 
 COPY --from=build /app/build/libs/piped-1.0-all.jar /app/piped.jar
 
-# Create a simple VERSION file if it doesn't exist
-RUN echo "1.0.0" > VERSION
+COPY VERSION .
 
 EXPOSE 8080
-EXPOSE 1080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 CMD /docker-healthcheck.sh
 ENTRYPOINT ["/hotspot-entrypoint.sh"]

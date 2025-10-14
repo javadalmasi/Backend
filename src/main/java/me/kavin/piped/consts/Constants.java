@@ -106,10 +106,6 @@ public class Constants {
 
     public static final String VERSION;
 
-    // Proxy service configuration
-    public static final String PROXY_HOST;
-    public static final int PROXY_PORT;
-
     public static final ObjectMapper mapper = JsonMapper.builder()
             .addMixIn(Page.class, PageMixin.class)
             .addMixIn(ListLinkHandler.class, ListLinkHandlerMixin.class)
@@ -177,11 +173,6 @@ public class Constants {
             MATRIX_TOKEN = getProperty(prop, "MATRIX_TOKEN");
             GEO_RESTRICTION_CHECKER_URL = getProperty(prop, "GEO_RESTRICTION_CHECKER_URL");
             BG_HELPER_URL = getProperty(prop, "BG_HELPER_URL");
-            
-            // Proxy service configuration
-            PROXY_HOST = getProperty(prop, "PROXY_HOST", "localhost");
-            PROXY_PORT = Integer.parseInt(getProperty(prop, "PROXY_PORT", "1080"));
-
             prop.forEach((_key, _value) -> {
                 String key = String.valueOf(_key), value = String.valueOf(_value);
                 if (key.startsWith("hibernate"))
