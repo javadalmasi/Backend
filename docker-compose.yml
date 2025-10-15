@@ -1,4 +1,12 @@
 services:
+    proxy:
+        build:
+            context: .
+            dockerfile: proxy/Dockerfile
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:1080:8080" # Expose gost on port 1080 to the host
+
     piped:
         image: 1337kavin/piped:latest
         restart: unless-stopped
@@ -8,6 +16,7 @@ services:
             - ./config.properties:/app/config.properties
         depends_on:
             - postgres
+            - proxy
     postgres:
         image: postgres:17-alpine
         restart: unless-stopped

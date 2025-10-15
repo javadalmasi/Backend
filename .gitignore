@@ -29,3 +29,7 @@ hs_err_pid*
 
 # Version File
 VERSION
+
+### Python ###
+__pycache__/
+*.pyc
