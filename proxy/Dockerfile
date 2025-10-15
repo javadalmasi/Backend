@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python libraries
-COPY proxy/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Download and install gost
@@ -22,7 +22,7 @@ RUN wget "https://github.com/ginuerzh/gost/releases/download/v${GOST_VERSION}/go
     chmod +x /usr/local/bin/gost
 
 # Copy the proxy application files
-COPY proxy/ /app/
+COPY . /app/
 
 # Set the entrypoint
 CMD ["python3", "main.py"]
